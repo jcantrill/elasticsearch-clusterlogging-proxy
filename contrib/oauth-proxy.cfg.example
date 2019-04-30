@@ -1,5 +1,5 @@
 ## Oauth-Proxy Config File
-## https://github.com/openshift/oauth-proxy
+## https://github.com/openshift/elasticsearch-cluster-logging-proxy
 
 ## <addr>:<port> to listen on for HTTP/HTTPS clients
 # http_address = "127.0.0.1:4180"

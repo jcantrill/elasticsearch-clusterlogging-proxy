@@ -17,8 +17,8 @@ import (
 	"time"
 
 	"github.com/bitly/go-simplejson"
-	"github.com/openshift/oauth-proxy/providers"
-	"github.com/openshift/oauth-proxy/util"
+	"github.com/openshift/elasticsearch-cluster-logging-proxy/providers"
+	"github.com/openshift/elasticsearch-cluster-logging-proxy/util"
 
 	"k8s.io/apiserver/pkg/authentication/authenticator"
 	"k8s.io/apiserver/pkg/authorization/authorizer"

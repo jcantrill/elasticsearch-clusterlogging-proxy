@@ -13,8 +13,8 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/mreiferson/go-options"
-	"github.com/openshift/oauth-proxy/providers"
-	"github.com/openshift/oauth-proxy/providers/openshift"
+	"github.com/openshift/elasticsearch-cluster-logging-proxy/providers"
+	"github.com/openshift/elasticsearch-cluster-logging-proxy/providers/openshift"
 )
 
 func main() {

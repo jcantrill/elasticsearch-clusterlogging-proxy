@@ -18,7 +18,7 @@ import (
 	"github.com/18F/hmacauth"
 	"github.com/bmizerany/assert"
 
-	"github.com/openshift/oauth-proxy/providers"
+	"github.com/openshift/elasticsearch-cluster-logging-proxy/providers"
 	"golang.org/x/net/websocket"
 )
 

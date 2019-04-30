@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/openshift/oauth-proxy/cookie"
+	"github.com/openshift/elasticsearch-cluster-logging-proxy/cookie"
 )
 
 type SessionState struct {

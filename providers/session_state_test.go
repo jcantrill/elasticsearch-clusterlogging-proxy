@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/bmizerany/assert"
-	"github.com/openshift/oauth-proxy/cookie"
+	"github.com/openshift/elasticsearch-cluster-logging-proxy/cookie"
 )
 
 const secret = "0123456789abcdefghijklmnopqrstuv"

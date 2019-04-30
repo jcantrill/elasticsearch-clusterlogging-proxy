@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/18F/hmacauth"
-	"github.com/openshift/oauth-proxy/providers"
-	"github.com/openshift/oauth-proxy/providers/openshift"
+	"github.com/openshift/elasticsearch-cluster-logging-proxy/providers"
+	"github.com/openshift/elasticsearch-cluster-logging-proxy/providers/openshift"
 )
 
 // Configuration Options that can be set by Command Line Flag, or Config File

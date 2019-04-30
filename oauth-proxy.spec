@@ -1,4 +1,4 @@
-# /!\ This file is maintained at https://github.com/openshift/oauth-proxy
+# /!\ This file is maintained at https://github.com/openshift/elasticsearch-cluster-logging-proxy
 %global debug_package   %{nil}
 %global snapshot	1
 
@@ -10,7 +10,7 @@
 %global provider_tld    com
 %global project         openshift
 %global repo            oauth-proxy
-# https://github.com/openshift/oauth-proxy
+# https://github.com/openshift/elasticsearch-cluster-logging-proxy
 %global provider_prefix %{provider}.%{provider_tld}/%{project}/%{repo}
 %global import_path     %{provider_prefix}
 # %commit is intended to be set by tito. The values in this spec file will not be kept up to date.
