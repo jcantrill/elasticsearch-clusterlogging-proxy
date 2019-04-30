@@ -1,14 +1,15 @@
 GOFLAGS :=
 IMAGE_REPOSITORY_NAME ?= openshift
+BIN_NAME=elasticsearch-cluster-logging-proxy
 
 build:
 	go build $(GOFLAGS) .
 .PHONY: build
 
 images:
-	imagebuilder -f Dockerfile -t $(IMAGE_REPOSITORY_NAME)/oauth-proxy .
+	imagebuilder -f Dockerfile -t $(IMAGE_REPOSITORY_NAME)/$(BIN_NAME)
 .PHONY: images
 
 clean:
-	$(RM) ./oauth-proxy
+	$(RM) ./$(BIN_NAME)
 .PHONY: clean

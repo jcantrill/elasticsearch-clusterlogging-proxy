@@ -167,6 +167,7 @@ func main() {
 		}()
 	}
 
+	oauthproxy.registerExtensions()
 	var h http.Handler = oauthproxy
 	if opts.RequestLogging {
 		h = LoggingHandler(os.Stdout, h, true)
