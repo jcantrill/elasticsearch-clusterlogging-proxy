@@ -2,6 +2,9 @@ GOFLAGS :=
 IMAGE_REPOSITORY_NAME ?= openshift
 BIN_NAME=elasticsearch-clusterlogging-proxy
 
+PKGS=$(shell go list ./... | grep -v -E '/vendor/|/test|/examples')
+TEST_OPTIONS?=
+
 build:
 	go build $(GOFLAGS) .
 .PHONY: build
@@ -13,3 +16,7 @@ images:
 clean:
 	$(RM) ./$(BIN_NAME)
 .PHONY: clean
+
+test:
+	go test $(TEST_OPTIONS) $(PKGS)
+.PHONY: test

@@ -64,7 +64,7 @@ func makeTestCertFile(t *testing.T, pem, dir string) *os.File {
 }
 
 func TestGetCertPool(t *testing.T) {
-	_, err := GetCertPool([]string(nil))
+	_, err := GetCertPool([]string(nil), false)
 	if err == nil {
 		t.Errorf("expected an error")
 	}
@@ -75,7 +75,7 @@ func TestGetCertPool(t *testing.T) {
 	certFile1 := makeTestCertFile(t, testCA1, tempDir)
 	certFile2 := makeTestCertFile(t, testCA2, tempDir)
 
-	certPool, err := GetCertPool([]string{certFile1.Name(), certFile2.Name()})
+	certPool, err := GetCertPool([]string{certFile1.Name(), certFile2.Name()}, false)
 	if err != nil {
 		t.Errorf("unexpected error %v", err)
 	}
