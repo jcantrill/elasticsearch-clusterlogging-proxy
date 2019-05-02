@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/openshift/elasticsearch-cluster-logging-proxy/util"
+	"github.com/openshift/elasticsearch-clusterlogging-proxy/util"
 )
 
 type Server struct {

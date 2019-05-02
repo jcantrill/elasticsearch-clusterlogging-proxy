@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/bmizerany/assert"
-	"github.com/openshift/elasticsearch-cluster-logging-proxy/providers"
+	"github.com/openshift/elasticsearch-clusterlogging-proxy/providers"
 )
 
 type testProvider struct {

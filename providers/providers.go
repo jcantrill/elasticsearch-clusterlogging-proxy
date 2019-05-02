@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/openshift/elasticsearch-cluster-logging-proxy/cookie"
+	"github.com/openshift/elasticsearch-clusterlogging-proxy/cookie"
 )
 
 type Provider interface {

@@ -310,7 +310,7 @@ func getTemplates() *template.Template {
   <footer>
     {{ if eq .Footer "-" }}
     {{ else if eq .Footer ""}}
-      Secured with <a href="https://github.com/openshift/elasticsearch-cluster-logging-proxy#oauth2_proxy">OpenShift oauth-proxy</a> version {{.Version}}
+      Secured with <a href="https://github.com/openshift/elasticsearch-clusterlogging-proxy#oauth2_proxy">OpenShift oauth-proxy</a> version {{.Version}}
     {{ else }}
       {{.Footer}}
     {{ end }}

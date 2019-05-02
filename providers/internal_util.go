@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/openshift/elasticsearch-cluster-logging-proxy/api"
+	"github.com/openshift/elasticsearch-clusterlogging-proxy/api"
 )
 
 // stripToken is a helper function to obfuscate "access_token"

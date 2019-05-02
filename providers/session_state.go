@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/openshift/elasticsearch-cluster-logging-proxy/cookie"
+	"github.com/openshift/elasticsearch-clusterlogging-proxy/cookie"
 )
 
 type SessionState struct {
@@ -15,6 +15,7 @@ type SessionState struct {
 	RefreshToken string
 	Email        string
 	User         string
+	Groups       []string
 }
 
 func (s *SessionState) IsExpired() bool {

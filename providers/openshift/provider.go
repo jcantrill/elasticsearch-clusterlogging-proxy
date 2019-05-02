@@ -17,8 +17,8 @@ import (
 	"time"
 
 	"github.com/bitly/go-simplejson"
-	"github.com/openshift/elasticsearch-cluster-logging-proxy/providers"
-	"github.com/openshift/elasticsearch-cluster-logging-proxy/util"
+	"github.com/openshift/elasticsearch-clusterlogging-proxy/providers"
+	"github.com/openshift/elasticsearch-clusterlogging-proxy/util"
 
 	"k8s.io/apiserver/pkg/authentication/authenticator"
 	"k8s.io/apiserver/pkg/authorization/authorizer"
@@ -374,7 +374,7 @@ func (p *OpenShiftProvider) ValidateRequest(req *http.Request) (*providers.Sessi
 	}
 
 	parts := strings.SplitN(auth, " ", 2)
-	session := &providers.SessionState{User: user.GetName(), Email: user.GetName() + "@cluster.local"}
+	session := &providers.SessionState{User: user.GetName(), Email: user.GetName() + "@cluster.local", Groups: user.GetGroups()}
 	if parts[0] == "Bearer" {
 		session.AccessToken = parts[1]
 	}

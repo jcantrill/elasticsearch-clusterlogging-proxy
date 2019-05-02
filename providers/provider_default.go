@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/openshift/elasticsearch-cluster-logging-proxy/cookie"
+	"github.com/openshift/elasticsearch-clusterlogging-proxy/cookie"
 )
 
 func (p *ProviderData) Redeem(redeemURL *url.URL, redirectURL, code string) (s *SessionState, err error) {

@@ -1,7 +1,7 @@
 #!/bin/bash -x
 set -e
 
-PROJECT_REPO=github.com/openshift/elasticsearch-cluster-logging-proxy
+PROJECT_REPO=github.com/openshift/elasticsearch-clusterlogging-proxy
 DOCKER_REPO=localhost:5000
 
 KUBECONFIG=~/admin.kubeconfig

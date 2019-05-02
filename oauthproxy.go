@@ -18,10 +18,10 @@ import (
 	"golang.org/x/net/http2"
 
 	"github.com/18F/hmacauth"
-	"github.com/openshift/elasticsearch-cluster-logging-proxy/cookie"
-	"github.com/openshift/elasticsearch-cluster-logging-proxy/extensions"
-	"github.com/openshift/elasticsearch-cluster-logging-proxy/providers"
-	"github.com/openshift/elasticsearch-cluster-logging-proxy/util"
+	"github.com/openshift/elasticsearch-clusterlogging-proxy/cookie"
+	"github.com/openshift/elasticsearch-clusterlogging-proxy/extensions"
+	"github.com/openshift/elasticsearch-clusterlogging-proxy/providers"
+	"github.com/openshift/elasticsearch-clusterlogging-proxy/util"
 	"github.com/yhat/wsutil"
 )
 
@@ -564,6 +564,7 @@ func getRemoteAddr(req *http.Request) (s string) {
 }
 
 func (p *OAuthProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	log.Printf("Serving request: %s", req.URL.Path)
 	switch path := req.URL.Path; {
 	case path == p.RobotsPath:
 		p.RobotsTxt(rw)
@@ -719,15 +720,17 @@ func (p *OAuthProxy) Proxy(rw http.ResponseWriter, req *http.Request) {
 	} else {
 		var err error
 		alteredReq := req
+		log.Printf("Proxy'ing request.  No. of request handler: %v", len(p.requestHandlers))
 		for _, reqhandler := range p.requestHandlers {
 			alteredReq, err = reqhandler.Process(alteredReq)
+			log.Printf("Request handler %q", reqhandler.Name())
 			if err != nil {
 				log.Printf("Error processing request in handler %s, %v", reqhandler.Name(), err)
-				p.ErrorPage(rw, http.StatusInternalServerError,
-					"Internal Error", "Internal Error")
+				p.ErrorPage(rw, http.StatusInternalServerError, "Internal Error", "Internal Error")
 				return
 			}
 		}
+		log.Printf("Request: %v", alteredReq)
 		p.serveMux.ServeHTTP(rw, alteredReq)
 	}
 }
@@ -822,6 +825,7 @@ func (p *OAuthProxy) Authenticate(rw http.ResponseWriter, req *http.Request) int
 		if session.Email != "" {
 			req.Header["X-Forwarded-Email"] = []string{session.Email}
 		}
+		req.Header["X-Forwarded-Groups"] = session.Groups
 	}
 	if p.SetXAuthRequest {
 		rw.Header().Set("X-Auth-Request-User", session.User)

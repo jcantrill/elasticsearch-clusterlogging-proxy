@@ -171,8 +171,8 @@ is a common configuration error.
 To build, ensure you are running Go 1.7+ and clone the repo:
 
 ```
-$ go get -u github.com/openshift/elasticsearch-cluster-logging-proxy
-$ cd $GOPATH/src/github.com/openshift/elasticsearch-cluster-logging-proxy
+$ go get -u github.com/openshift/elasticsearch-clusterlogging-proxy
+$ cd $GOPATH/src/github.com/openshift/elasticsearch-clusterlogging-proxy
 ```
 
 To build, run:
