@@ -5,13 +5,13 @@ import (
 )
 
 //FnHandlerRequest is a function that can process a request
-type FnHandlerRequest func(req *http.Request) (*http.Request, error)
+type FnHandlerRequest func(req *http.Request, context interface{}) (*http.Request, error)
 
 //RequestHandler if a function that modifies a request.  Execution occurs
 //after authentication but before proxy to upstream
 type RequestHandler interface {
 	//Process the request and return the modification or error
-	Process(req *http.Request) (*http.Request, error)
+	Process(req *http.Request, context interface{}) (*http.Request, error)
 	//Name of the request handler
 	Name() string
 }
@@ -28,8 +28,8 @@ func (h *SimpleRequestHandler) Name() string {
 }
 
 //Process the Request
-func (h *SimpleRequestHandler) Process(req *http.Request) (*http.Request, error) {
-	return h.processor(req)
+func (h *SimpleRequestHandler) Process(req *http.Request, context interface{}) (*http.Request, error) {
+	return h.processor(req, context)
 }
 
 //NewRequestHandler creates a named wrapper to a requesthandler function

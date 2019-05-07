@@ -4,8 +4,9 @@ import (
 	"net/http"
 
 	"github.com/bitly/go-simplejson"
-
 	"github.com/openshift/elasticsearch-clusterlogging-proxy/extensions"
+	"github.com/openshift/elasticsearch-clusterlogging-proxy/extensions/clusterlogging/clients"
+	"k8s.io/apimachinery/pkg/util/sets"
 )
 
 // request
@@ -21,18 +22,67 @@ import (
 
 type extension struct {
 	openshiftCAs []string
+
+	//whitelisted is the list of user and or serviceacccounts for which
+	//all proxy logic is skipped (e.g. fluent)
+	whitelisted sets.String
+}
+
+type requestContext struct {
+	*UserInfo
 }
 
 //NewHandlers is the initializer for clusterlogging extensions
 func NewHandlers(openshiftCAs []string) []extensions.RequestHandler {
 	return []extensions.RequestHandler{
-		&extension{openshiftCAs},
+		&extension{
+			openshiftCAs,
+			sets.NewString(),
+		},
 	}
 }
 
-func (ex *extension) Process(req *http.Request) (*http.Request, error) {
-	token := req.Header.Get("X-Forwarded-Access-Token")
-	client, err := newOpenShiftClient(ex.openshiftCAs, token)
+func (ext *extension) Process(req *http.Request, context interface{}) (*http.Request, error) {
+	if ext.isWhiteListed(userName(req)) {
+		return req, nil
+	}
+	modRequest := req
+	userInfo, err := newUserInfo(ext, req)
+	if err != nil {
+		return req, err
+	}
+	context = &requestContext{
+		userInfo,
+	}
+
+	return modRequest, nil
+}
+
+func (ext *extension) isWhiteListed(name string) bool {
+	return ext.whitelisted.Has(name)
+}
+
+func userName(req *http.Request) string {
+	return req.Header.Get("X-Forwarded-User")
+}
+
+func newUserInfo(ext *extension, req *http.Request) (*UserInfo, error) {
+	projects, err := ext.fetchProjects(req.Header.Get("X-Forwarded-Access-Token"))
+	if err != nil {
+		return nil, err
+	}
+	info := &UserInfo{
+		Username: userName(req),
+		Projects: projects,
+	}
+	if groups, found := req.Header["X-Forwarded-Groups"]; found {
+		info.Groups = groups
+	}
+	return info, nil
+}
+
+func (ex *extension) fetchProjects(token string) ([]Project, error) {
+	client, err := clients.NewOpenShiftClient(ex.openshiftCAs, token)
 	if err != nil {
 		return nil, err
 	}
@@ -41,18 +91,22 @@ func (ex *extension) Process(req *http.Request) (*http.Request, error) {
 	if err != nil {
 		return nil, err
 	}
-	projects := []string{}
+	projects := []Project{}
 	if items, ok := json.CheckGet("items"); ok {
 		total := len(items.MustArray())
 		for i := 0; i < total; i++ {
-			if name := items.GetIndex(i).GetPath("metadata", "name"); name.Interface() != nil {
-				projects = append(projects, name.MustString())
+			//check for missing?
+			var name, uid string
+			if value := items.GetIndex(i).GetPath("metadata", "name"); value.Interface() != nil {
+				name = value.MustString()
 			}
+			if value := items.GetIndex(i).GetPath("metadata", "uid"); value.Interface() != nil {
+				uid = value.MustString()
+			}
+			projects = append(projects, Project{name, uid})
 		}
 	}
-	modRequest := req
-	modRequest.Header["X-Forwarded-Projects"] = projects
-	return modRequest, nil
+	return projects, nil
 }
 
 func (ex *extension) Name() string {

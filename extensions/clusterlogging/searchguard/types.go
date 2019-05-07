@@ -1,6 +1,8 @@
 package searchguard
 
 import (
+	"encoding/json"
+
 	"gopkg.in/yaml.v2"
 )
 
@@ -15,9 +17,9 @@ import (
 type Roles map[string]Role
 
 type Role struct {
-	ClusterPermissions Permissions      `yaml:"cluster,omitempty"`
-	ExpiresInMillis    int64            `yaml:"expires,omitempty"`
-	IndicesPermissions IndexPermissions `yaml:"indices,omitempty"`
+	ClusterPermissions Permissions      `yaml:"cluster,omitempty" json:"cluster,omitempty"`
+	ExpiresInMillis    int64            `yaml:"expires,omitempty" json:"expires,omitempty"`
+	IndicesPermissions IndexPermissions `yaml:"indices,omitempty" json:"indices,omitempty"`
 }
 type Permissions []string
 
@@ -40,7 +42,21 @@ func toYaml(acl interface{}) (string, error) {
 	return string(out), nil
 }
 
-//SearchGuardRolesmapping are the mapping of username/groups to roles
+func (roles *Roles) FromJson(acl string) error {
+	if err := json.Unmarshal([]byte(acl), roles); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (rolesmapping *RolesMapping) FromJson(acl string) error {
+	if err := json.Unmarshal([]byte(acl), rolesmapping); err != nil {
+		return err
+	}
+	return nil
+}
+
+//Rolesmapping are the mapping of username/groups to roles
 // root
 //  roleName
 //    expires:
@@ -49,7 +65,7 @@ func toYaml(acl interface{}) (string, error) {
 type RolesMapping map[string]RoleMapping
 
 type RoleMapping struct {
-	ExpiresInMillis int64    `yaml:"expires,omitempty"`
-	Users           []string `yaml:"users,omitempty"`
-	Groups          []string `yaml:"groups,omitempty"`
+	ExpiresInMillis int64    `yaml:"expires,omitempty" json:"expires,omitempty"`
+	Users           []string `yaml:"users,omitempty" json:"users,omitempty"`
+	Groups          []string `yaml:"groups,omitempty" yaml:"groups,omitempty"`
 }

@@ -1,4 +1,4 @@
-package clusterlogging
+package clients
 
 import (
 	"crypto/tls"
@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"net/url"
+	neturl "net/url"
 	"os"
 
 	"github.com/bitly/go-simplejson"
@@ -55,8 +55,8 @@ func request(client *http.Client, req *http.Request) (*simplejson.Json, error) {
 }
 
 // copy of same function in provider.go
-func getKubeAPIURLWithPath(path string) *url.URL {
-	ret := &url.URL{
+func getKubeAPIURLWithPath(path string) *neturl.URL {
+	ret := &neturl.URL{
 		Scheme: "https",
 		Host:   "kubernetes.default.svc",
 		Path:   path,
@@ -69,8 +69,8 @@ func getKubeAPIURLWithPath(path string) *url.URL {
 	return ret
 }
 
-// newOpenShiftClient returns a client for connecting to the master.
-func newOpenShiftClient(paths []string, token string) (*OpenShiftClient, error) {
+// NewOpenShiftClient returns a client for connecting to the master.
+func NewOpenShiftClient(paths []string, token string) (*OpenShiftClient, error) {
 	if token == "" {
 		return nil, fmt.Errorf("Unable to make requests to api server using a blank user token")
 	}
