@@ -86,8 +86,8 @@
   branch = "master"
   name = "github.com/mreiferson/go-options"
 
-[[override]]
-  version = "v1.3.1"
+[[constraint]]
+  source = "https://github.com/fsnotify/fsnotify/archive/v1.4.7.tar.gz"
   name = "gopkg.in/fsnotify.v1"
 
 [[constraint]]

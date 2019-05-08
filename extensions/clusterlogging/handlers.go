@@ -1,43 +1,46 @@
 package clusterlogging
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/bitly/go-simplejson"
 	"github.com/openshift/elasticsearch-clusterlogging-proxy/extensions"
+	ac "github.com/openshift/elasticsearch-clusterlogging-proxy/extensions/clusterlogging/accesscontrol"
 	"github.com/openshift/elasticsearch-clusterlogging-proxy/extensions/clusterlogging/clients"
+	config "github.com/openshift/elasticsearch-clusterlogging-proxy/extensions/clusterlogging/types"
 	"k8s.io/apimachinery/pkg/util/sets"
 )
-
-// request
-//   username
-//   groups
-//
-//  flow ->
-//    1. replace uri if kibana to kibana.usernamehash
-//       replace content for index '.kibana' kibana profile changed
-//    2. seed dashboards/index patterns
-//    3. update sg
-//       kibana role - infra: whitelisted group
 
 type extension struct {
 	openshiftCAs []string
 
 	//whitelisted is the list of user and or serviceacccounts for which
 	//all proxy logic is skipped (e.g. fluent)
-	whitelisted sets.String
+	whitelisted     sets.String
+	documentManager *ac.DocumentManager
 }
 
 type requestContext struct {
-	*UserInfo
+	*config.UserInfo
 }
 
 //NewHandlers is the initializer for clusterlogging extensions
 func NewHandlers(openshiftCAs []string) []extensions.RequestHandler {
+	config := config.ExtConfig{
+		KibanaIndexMode:            config.KibanaIndexModeSharedOps,
+		InfraGroupName:             "system:cluster-admins",
+		PermissionExpirationMillis: 1000 * 2, //2 minutes
+	}
+	dm, err := ac.NewDocumentManager(config)
+	if err != nil {
+		log.Panicf("Unable to initialize the cluster logging proxy extension %v", err)
+	}
 	return []extensions.RequestHandler{
 		&extension{
 			openshiftCAs,
 			sets.NewString(),
+			dm,
 		},
 	}
 }
@@ -51,8 +54,10 @@ func (ext *extension) Process(req *http.Request, context interface{}) (*http.Req
 	if err != nil {
 		return req, err
 	}
-	context = &requestContext{
-		userInfo,
+	// modify kibana request
+	// seed kibana dashboards
+	if err = ext.documentManager.SyncACL(userInfo); err != nil {
+		return nil, err
 	}
 
 	return modRequest, nil
@@ -66,12 +71,12 @@ func userName(req *http.Request) string {
 	return req.Header.Get("X-Forwarded-User")
 }
 
-func newUserInfo(ext *extension, req *http.Request) (*UserInfo, error) {
+func newUserInfo(ext *extension, req *http.Request) (*config.UserInfo, error) {
 	projects, err := ext.fetchProjects(req.Header.Get("X-Forwarded-Access-Token"))
 	if err != nil {
 		return nil, err
 	}
-	info := &UserInfo{
+	info := &config.UserInfo{
 		Username: userName(req),
 		Projects: projects,
 	}
@@ -81,8 +86,8 @@ func newUserInfo(ext *extension, req *http.Request) (*UserInfo, error) {
 	return info, nil
 }
 
-func (ex *extension) fetchProjects(token string) ([]Project, error) {
-	client, err := clients.NewOpenShiftClient(ex.openshiftCAs, token)
+func (ext *extension) fetchProjects(token string) ([]config.Project, error) {
+	client, err := clients.NewOpenShiftClient(ext.openshiftCAs, token)
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +96,7 @@ func (ex *extension) fetchProjects(token string) ([]Project, error) {
 	if err != nil {
 		return nil, err
 	}
-	projects := []Project{}
+	projects := []config.Project{}
 	if items, ok := json.CheckGet("items"); ok {
 		total := len(items.MustArray())
 		for i := 0; i < total; i++ {
@@ -103,12 +108,12 @@ func (ex *extension) fetchProjects(token string) ([]Project, error) {
 			if value := items.GetIndex(i).GetPath("metadata", "uid"); value.Interface() != nil {
 				uid = value.MustString()
 			}
-			projects = append(projects, Project{name, uid})
+			projects = append(projects, config.Project{Name: name, UUID: uid})
 		}
 	}
 	return projects, nil
 }
 
-func (ex *extension) Name() string {
+func (ext *extension) Name() string {
 	return "addUserProjects"
 }

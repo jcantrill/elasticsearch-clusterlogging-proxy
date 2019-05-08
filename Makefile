@@ -18,5 +18,5 @@ clean:
 .PHONY: clean
 
 test:
-	go test $(TEST_OPTIONS) $(PKGS)
+	@go test $(TEST_OPTIONS) $(PKGS)
 .PHONY: test

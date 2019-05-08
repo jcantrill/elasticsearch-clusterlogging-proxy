@@ -1,10 +1,20 @@
 package searchguard
 
 import (
+	"crypto/sha1"
 	"encoding/json"
+	"fmt"
+	"strings"
 
 	"gopkg.in/yaml.v2"
+
+	cl "github.com/openshift/elasticsearch-clusterlogging-proxy/extensions/clusterlogging/types"
 )
+
+type ACLDocuments struct {
+	Roles
+	RolesMapping
+}
 
 //Roles are the roles for the ES Cluster
 // root
@@ -68,4 +78,59 @@ type RoleMapping struct {
 	ExpiresInMillis int64    `yaml:"expires,omitempty" json:"expires,omitempty"`
 	Users           []string `yaml:"users,omitempty" json:"users,omitempty"`
 	Groups          []string `yaml:"groups,omitempty" yaml:"groups,omitempty"`
+}
+
+//AddUser permissions to the ACL documents
+func (docs *ACLDocuments) AddUser(user *cl.UserInfo, expires int64) {
+	roleName := roleName(user)
+	docs.Roles[roleName] = Role{
+		ClusterPermissions: Permissions{"CLUSTER_MONITOR_KIBANA", "USER_CLUSTER_OPERATIONS"},
+		ExpiresInMillis:    expires,
+		IndicesPermissions: newSearchGuardDocumentPermissions(user),
+	}
+	docs.RolesMapping[roleName] = RoleMapping{
+		ExpiresInMillis: expires,
+		Users:           []string{user.Username},
+		Groups:          user.Groups,
+	}
+}
+
+func (docs *ACLDocuments) ExpirePermissions() {
+}
+
+func newSearchGuardDocumentPermissions(user *cl.UserInfo) IndexPermissions {
+	permissions := IndexPermissions{}
+	permissions[fix(kibanaIndexName(user))] = DocumentPermissions{
+		"*": Permissions{
+			"INDEX_KIBANA",
+		},
+	}
+	for _, project := range user.Projects {
+		permissions[fix(projectIndexName(project))] = DocumentPermissions{
+			"*": Permissions{
+				"INDEX_PROJECT",
+			},
+		}
+	}
+	return permissions
+}
+
+func fix(indexName string) string {
+	return strings.Replace(indexName, ".", "?", -1)
+}
+
+func projectIndexName(p cl.Project) string {
+	return fmt.Sprintf("project.%s.%s.*", p.Name, p.UUID)
+}
+
+func kibanaIndexName(user *cl.UserInfo) string {
+	return fmt.Sprintf(".kibana.%s", usernameHash(user))
+}
+
+func roleName(user *cl.UserInfo) string {
+	return fmt.Sprintf("gen_user_%s", usernameHash(user))
+}
+
+func usernameHash(user *cl.UserInfo) string {
+	return fmt.Sprintf("%x", sha1.Sum([]byte(user.Username)))
 }
