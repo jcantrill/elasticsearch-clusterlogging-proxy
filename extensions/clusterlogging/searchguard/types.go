@@ -6,14 +6,19 @@ import (
 	"fmt"
 	"strings"
 
-	"gopkg.in/yaml.v2"
-
 	cl "github.com/openshift/elasticsearch-clusterlogging-proxy/extensions/clusterlogging/types"
+	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v2"
 )
 
 type ACLDocuments struct {
 	Roles
 	RolesMapping
+}
+
+type Serializable interface {
+	ToJson() (string, error)
+	Type() string
 }
 
 //Roles are the roles for the ES Cluster
@@ -37,6 +42,12 @@ type IndexPermissions map[string]DocumentPermissions
 
 type DocumentPermissions map[string]Permissions
 
+func (roles *Roles) Type() string {
+	return "roles"
+}
+func (rolesmapping *RolesMapping) Type() string {
+	return "rolesmapping"
+}
 func (roles *Roles) ToYaml() (string, error) {
 	return toYaml(roles)
 }
@@ -62,12 +73,15 @@ func toYaml(acl interface{}) (string, error) {
 }
 
 func ToJson(acl interface{}) (string, error) {
+	log.Tracef("Converting acl to json: %+v", acl)
 	var out []byte
 	var err error
 	if out, err = json.Marshal(acl); err != nil {
 		return "", err
 	}
-	return string(out), nil
+	resp := string(out)
+	log.Tracef("Converted: %s", resp)
+	return resp, nil
 }
 
 func (roles *Roles) FromJson(acl string) error {

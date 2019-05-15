@@ -12,8 +12,7 @@ import (
 type searchGuardClient interface {
 	FetchRolesMapping() (*searchguard.RolesMapping, error)
 	FetchRoles() (*searchguard.Roles, error)
-	FlushRolesMapping(*searchguard.RolesMapping) error
-	FlushRoles(*searchguard.Roles) error
+	FlushACL(doc searchguard.Serializable) error
 }
 
 //DocumentManager understands how to load and sync ACL documents
@@ -38,26 +37,26 @@ func NewDocumentManager(config cl.ExtConfig) (*DocumentManager, error) {
 //SyncACL to include the given UserInfo
 func (dm *DocumentManager) SyncACL(userInfo *cl.UserInfo) error {
 	log.Debugf("SyncACL for %+v", userInfo)
-	if !dm.isInfraGroupMember(userInfo) {
-		docs, err := dm.loadACL()
-		if err != nil {
-			return err
-		}
-		docs.ExpirePermissions()
-		docs.AddUser(userInfo, nextExpireTime(dm.ExtConfig.PermissionExpirationMillis))
-		if err = dm.writeACL(docs); err != nil {
-			return err
-		}
+	if dm.isInfraGroupMember(userInfo) {
+		log.Debugf("Skipping sync of ACLs for infragroup member %s. Permissions are assumed to be static", userInfo.Username)
+		return nil
+	}
+	docs, err := dm.loadACL()
+	if err != nil {
+		return err
+	}
+	docs.ExpirePermissions()
+	docs.AddUser(userInfo, nextExpireTime(dm.ExtConfig.PermissionExpirationMillis))
+	if err = dm.writeACL(docs); err != nil {
+		return err
 	}
 	return nil
 }
 func (dm *DocumentManager) writeACL(docs *searchguard.ACLDocuments) error {
-	log.Debugf("Flushing SG Roles: %v", docs.Roles)
-	if err := dm.sgclient.FlushRoles(&docs.Roles); err != nil {
+	if err := dm.sgclient.FlushACL(&docs.Roles); err != nil {
 		return err
 	}
-	log.Debugf("Flushing SG RolesMapping: %v", docs.RolesMapping)
-	if err := dm.sgclient.FlushRolesMapping(&docs.RolesMapping); err != nil {
+	if err := dm.sgclient.FlushACL(&docs.RolesMapping); err != nil {
 		return err
 	}
 	return nil

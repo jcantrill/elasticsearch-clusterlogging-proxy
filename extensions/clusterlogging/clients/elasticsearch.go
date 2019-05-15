@@ -3,10 +3,17 @@ package clients
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strings"
+
+	"github.com/oliveagle/jsonpath"
+	log "github.com/sirupsen/logrus"
+)
+
+var (
+	errorLookup, _ = jsonpath.Compile("$.error")
 )
 
 //ElasticsearchClient is an admin client to query a local instance of Elasticsearch
@@ -52,11 +59,18 @@ func url(elasticsearchURL, path string) string {
 
 //Get the content at the path
 func (es *ElasticsearchClient) Get(path string) (string, error) {
-	resp, err := es.client.Get(url(es.serverURL, path))
+	url := url(es.serverURL, path)
+	log.Tracef("Get: %v", url)
+	resp, err := es.client.Get(url)
+	log.Tracef("Response code: %v", resp.StatusCode)
 	if err != nil {
 		return "", err
 	}
-	return readBody(resp)
+	body, err := readBody(resp)
+	if err != nil {
+		return "", err
+	}
+	return body, nil
 }
 
 func readBody(resp *http.Response) (string, error) {
@@ -65,7 +79,20 @@ func readBody(resp *http.Response) (string, error) {
 		return "", err
 	}
 	defer resp.Body.Close()
-	return string(body), nil
+	result := string(body)
+	log.Tracef("Response body: %s", result)
+	if resp.StatusCode != 200 {
+		log.Trace("Additionally inspecting result of non 200 response...")
+		var data interface{}
+		json.Unmarshal([]byte(body), &data)
+		errorBody, err := errorLookup.Lookup(data)
+		log.Tracef("errBody: %v", errorBody)
+		if err == nil {
+			return errorBody.(string), nil
+		}
+		log.Tracef("Error trying to decode json response %v", err)
+	}
+	return result, nil
 }
 
 //Put submits a PUT request to ES assuming the given body is of type 'application/json'
