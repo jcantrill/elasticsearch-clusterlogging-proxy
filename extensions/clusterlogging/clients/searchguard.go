@@ -6,6 +6,7 @@ import (
 
 	"github.com/oliveagle/jsonpath"
 
+	ext "github.com/openshift/elasticsearch-clusterlogging-proxy/extensions"
 	"github.com/openshift/elasticsearch-clusterlogging-proxy/extensions/clusterlogging/searchguard"
 )
 
@@ -18,8 +19,8 @@ type SearchGuardClient struct {
 	esClient *ElasticsearchClient
 }
 
-func NewSearchGuardClient() (*SearchGuardClient, error) {
-	esClient, err := NewElasticsearchClient()
+func NewSearchGuardClient(opts ext.Options) (*SearchGuardClient, error) {
+	esClient, err := NewElasticsearchClient(opts.SSLInsecureSkipVerify, opts.UpstreamURL, opts.TLSCertFile, opts.TLSKeyFile, opts.OpenshiftCAs)
 	if err != nil {
 		return nil, err
 	}
@@ -71,9 +72,34 @@ func (sg *SearchGuardClient) FetchRolesMapping() (*searchguard.RolesMapping, err
 	return rolesmapping, nil
 }
 
-func (sg *SearchGuardClient) FlushRolesMapping(rolesmapping *searchguard.RolesMapping) error {
+func (sg *SearchGuardClient) FlushRolesMapping(rolesMapping *searchguard.RolesMapping) error {
+	json, err := rolesMapping.ToJson()
+	if err != nil {
+		return err
+	}
+	var out []byte
+	base64.StdEncoding.Encode(out, []byte(json))
+	doc := map[string]string{"role": string(out)}
+	sDoc, err := searchguard.ToJson(doc)
+	if err != nil {
+		return err
+	}
+	sg.esClient.Put("sg/rolesmapping", sDoc)
 	return nil
 }
+
 func (sg *SearchGuardClient) FlushRoles(roles *searchguard.Roles) error {
+	json, err := roles.ToJson()
+	if err != nil {
+		return err
+	}
+	var out []byte
+	base64.StdEncoding.Encode(out, []byte(json))
+	doc := map[string]string{"role": string(out)}
+	sDoc, err := searchguard.ToJson(doc)
+	if err != nil {
+		return err
+	}
+	sg.esClient.Put("sg/roles", sDoc)
 	return nil
 }

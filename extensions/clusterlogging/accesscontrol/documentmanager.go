@@ -6,6 +6,7 @@ import (
 	"github.com/openshift/elasticsearch-clusterlogging-proxy/extensions/clusterlogging/clients"
 	"github.com/openshift/elasticsearch-clusterlogging-proxy/extensions/clusterlogging/searchguard"
 	cl "github.com/openshift/elasticsearch-clusterlogging-proxy/extensions/clusterlogging/types"
+	log "github.com/sirupsen/logrus"
 )
 
 type searchGuardClient interface {
@@ -23,7 +24,8 @@ type DocumentManager struct {
 
 //NewDocumentManager creates an instance or returns error
 func NewDocumentManager(config cl.ExtConfig) (*DocumentManager, error) {
-	sgClient, err := clients.NewSearchGuardClient()
+	log.Tracef("Instantiating a new document manager using: %+v", config)
+	sgClient, err := clients.NewSearchGuardClient(config.Options)
 	if err != nil {
 		return nil, err
 	}
@@ -35,6 +37,7 @@ func NewDocumentManager(config cl.ExtConfig) (*DocumentManager, error) {
 
 //SyncACL to include the given UserInfo
 func (dm *DocumentManager) SyncACL(userInfo *cl.UserInfo) error {
+	log.Debugf("SyncACL for %+v", userInfo)
 	if !dm.isInfraGroupMember(userInfo) {
 		docs, err := dm.loadACL()
 		if err != nil {
@@ -49,9 +52,11 @@ func (dm *DocumentManager) SyncACL(userInfo *cl.UserInfo) error {
 	return nil
 }
 func (dm *DocumentManager) writeACL(docs *searchguard.ACLDocuments) error {
+	log.Debugf("Flushing SG Roles: %v", docs.Roles)
 	if err := dm.sgclient.FlushRoles(&docs.Roles); err != nil {
 		return err
 	}
+	log.Debugf("Flushing SG RolesMapping: %v", docs.RolesMapping)
 	if err := dm.sgclient.FlushRolesMapping(&docs.RolesMapping); err != nil {
 		return err
 	}
@@ -59,6 +64,7 @@ func (dm *DocumentManager) writeACL(docs *searchguard.ACLDocuments) error {
 }
 
 func (dm *DocumentManager) loadACL() (*searchguard.ACLDocuments, error) {
+	log.Debug("Loading ACLs")
 	//TODO work on mget of roles/mappings
 	roles, err := dm.sgclient.FetchRoles()
 	if err != nil {
@@ -68,15 +74,18 @@ func (dm *DocumentManager) loadACL() (*searchguard.ACLDocuments, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &searchguard.ACLDocuments{
+	docs := &searchguard.ACLDocuments{
 		Roles:        *roles,
 		RolesMapping: *rolesmapping,
-	}, nil
+	}
+	log.Debugf("Loaded ACLs: %v", docs)
+	return docs, nil
 }
 
 func (dm *DocumentManager) isInfraGroupMember(user *cl.UserInfo) bool {
 	for _, group := range user.Groups {
 		if group == dm.ExtConfig.InfraGroupName {
+			log.Tracef("%s is a member of the InfraGroup (%s)", user.Username, dm.ExtConfig.InfraGroupName)
 			return true
 		}
 	}

@@ -13,6 +13,7 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/mreiferson/go-options"
+	ext "github.com/openshift/elasticsearch-clusterlogging-proxy/extensions"
 	"github.com/openshift/elasticsearch-clusterlogging-proxy/providers"
 	"github.com/openshift/elasticsearch-clusterlogging-proxy/providers/openshift"
 )
@@ -168,7 +169,14 @@ func main() {
 	}
 
 	log.Printf("Registering Extensions....")
-	oauthproxy.registerExtensions(openshiftCAs)
+	extOptions := &ext.Options{
+		OpenshiftCAs:          openshiftCAs,
+		TLSCertFile:           opts.TLSCertFile,
+		TLSKeyFile:            opts.TLSKeyFile,
+		UpstreamURL:           opts.Upstreams[0],
+		SSLInsecureSkipVerify: opts.SSLInsecureSkipVerify,
+	}
+	oauthproxy.registerExtensions(extOptions)
 	var h http.Handler = oauthproxy
 	if opts.RequestLogging {
 		h = LoggingHandler(os.Stdout, h, true)

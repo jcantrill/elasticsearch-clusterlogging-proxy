@@ -9,29 +9,22 @@ import (
 	"strings"
 )
 
-//elasticsearchURL expectation is the proxy will only live
-//in the same pod as ES
-// etc/openshift/elasticsearch/secret/admin-{ca,cert,key}
-const (
-	elasticsearchURL = "https://localhost:9200"
-	adminCA          = "/etc/openshift/elasticsearch/secret/admin-ca"
-	adminCert        = "/etc/openshift/elasticsearch/secret/admin-cert"
-	adminKey         = "/etc/openshift/elasticsearch/secret/admin-key"
-)
-
 //ElasticsearchClient is an admin client to query a local instance of Elasticsearch
 type ElasticsearchClient struct {
-	client *http.Client
+	serverURL string
+	client    *http.Client
 }
 
 //NewElasticsearchClient is the initializer to create an instance of ES client
-func NewElasticsearchClient() (*ElasticsearchClient, error) {
-	caCert, err := ioutil.ReadFile(adminCA)
-	if err != nil {
-		log.Fatal(err)
-	}
+func NewElasticsearchClient(skipVerify bool, serverURL, adminCert, adminKey string, adminCA []string) (*ElasticsearchClient, error) {
 	caCertPool := x509.NewCertPool()
-	caCertPool.AppendCertsFromPEM(caCert)
+	for _, ca := range adminCA {
+		caCert, err := ioutil.ReadFile(ca)
+		if err != nil {
+			log.Fatal(err)
+		}
+		caCertPool.AppendCertsFromPEM(caCert)
+	}
 
 	cert, err := tls.LoadX509KeyPair(adminCert, adminKey)
 	if err != nil {
@@ -41,15 +34,16 @@ func NewElasticsearchClient() (*ElasticsearchClient, error) {
 	client := &http.Client{
 		Transport: &http.Transport{
 			TLSClientConfig: &tls.Config{
-				RootCAs:      caCertPool,
-				Certificates: []tls.Certificate{cert},
+				RootCAs:            caCertPool,
+				Certificates:       []tls.Certificate{cert},
+				InsecureSkipVerify: skipVerify,
 			},
 		},
 	}
-	return &ElasticsearchClient{client}, nil
+	return &ElasticsearchClient{serverURL, client}, nil
 }
 
-func url(path string) string {
+func url(elasticsearchURL, path string) string {
 	if !strings.HasPrefix(path, "/") {
 		path = "/" + path
 	}
@@ -58,7 +52,7 @@ func url(path string) string {
 
 //Get the content at the path
 func (es *ElasticsearchClient) Get(path string) (string, error) {
-	resp, err := es.client.Get(url(path))
+	resp, err := es.client.Get(url(es.serverURL, path))
 	if err != nil {
 		return "", err
 	}
@@ -76,7 +70,7 @@ func readBody(resp *http.Response) (string, error) {
 
 //Put submits a PUT request to ES assuming the given body is of type 'application/json'
 func (es *ElasticsearchClient) Put(path string, body string) (string, error) {
-	request, err := http.NewRequest("PUT", url(path), strings.NewReader(body))
+	request, err := http.NewRequest("PUT", url(es.serverURL, path), strings.NewReader(body))
 	if err != nil {
 		return "", err
 	}

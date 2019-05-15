@@ -43,10 +43,28 @@ func (roles *Roles) ToYaml() (string, error) {
 func (rolesmapping *RolesMapping) ToYaml() (string, error) {
 	return toYaml(rolesmapping)
 }
+
+func (roles *Roles) ToJson() (string, error) {
+	return ToJson(roles)
+}
+
+func (rolesmapping *RolesMapping) ToJson() (string, error) {
+	return ToJson(rolesmapping)
+}
+
 func toYaml(acl interface{}) (string, error) {
 	var out []byte
 	var err error
 	if out, err = yaml.Marshal(acl); err != nil {
+		return "", err
+	}
+	return string(out), nil
+}
+
+func ToJson(acl interface{}) (string, error) {
+	var out []byte
+	var err error
+	if out, err = json.Marshal(acl); err != nil {
 		return "", err
 	}
 	return string(out), nil

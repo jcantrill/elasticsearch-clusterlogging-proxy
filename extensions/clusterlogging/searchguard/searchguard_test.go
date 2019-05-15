@@ -78,7 +78,6 @@ var _ = Describe("Generating SearchGuard roles", func() {
 			gen_user_4c54bf89fe913f39fc22d76309f80cdc6192928f:
 				expires: 15
 				users: ['CN=jdoe,OU=DL IT,OU=User Accounts,DC=example,DC=com']
-				groups: ['myspecialgroup']
 			gen_user_994a33f6a157ba4a286395f81a4333db1e6cefb6:
 				expires: 15
 				users: [user2.bar@email.com]

@@ -720,13 +720,12 @@ func (p *OAuthProxy) Proxy(rw http.ResponseWriter, req *http.Request) {
 	} else {
 		var err error
 		alteredReq := req
-		log.Printf("Proxy'ing request.  No. of request handler: %v", len(p.requestHandlers))
 		var context interface{}
 		for _, reqhandler := range p.requestHandlers {
 			alteredReq, err = reqhandler.Process(alteredReq, &context)
 			log.Printf("Request handler %q", reqhandler.Name())
 			if err != nil {
-				log.Printf("Error processing request in handler %s, %v", reqhandler.Name(), err)
+				log.Printf("Error processing request in handler %s: %v", reqhandler.Name(), err)
 				p.ErrorPage(rw, http.StatusInternalServerError, "Internal Error", "Internal Error")
 				return
 			}

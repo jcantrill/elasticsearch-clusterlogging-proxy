@@ -10,6 +10,7 @@ hello_openshift
 # Folders
 _obj
 _test
+_output
 
 # Architecture specific extensions/prefixes
 *.[568vq]

@@ -4,14 +4,15 @@ import (
 	"crypto/tls"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	neturl "net/url"
 	"os"
 
 	"github.com/bitly/go-simplejson"
 
+	ext "github.com/openshift/elasticsearch-clusterlogging-proxy/extensions"
 	"github.com/openshift/elasticsearch-clusterlogging-proxy/util"
+	log "github.com/sirupsen/logrus"
 )
 
 type OpenShiftClient struct {
@@ -31,8 +32,10 @@ func (c *OpenShiftClient) Get(path string) (*simplejson.Json, error) {
 
 func request(client *http.Client, req *http.Request) (*simplejson.Json, error) {
 	if client == nil {
+		log.Trace("Using http.DefaultClient as the given client is nil")
 		client = http.DefaultClient
 	}
+	log.Tracef("Executing request: %v", req)
 	resp, err := client.Do(req)
 	if err != nil {
 		log.Printf("%s %s %s", req.Method, req.URL, err)
@@ -40,7 +43,7 @@ func request(client *http.Client, req *http.Request) (*simplejson.Json, error) {
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
-	log.Printf("%d %s %s %s", resp.StatusCode, req.Method, req.URL, body)
+	log.Debugf("%d %s %s %s", resp.StatusCode, req.Method, req.URL, body)
 	if err != nil {
 		return nil, err
 	}
@@ -51,6 +54,7 @@ func request(client *http.Client, req *http.Request) (*simplejson.Json, error) {
 	if err != nil {
 		return nil, err
 	}
+	log.Debugf("Returning %v", data)
 	return data, nil
 }
 
@@ -70,15 +74,16 @@ func getKubeAPIURLWithPath(path string) *neturl.URL {
 }
 
 // NewOpenShiftClient returns a client for connecting to the master.
-func NewOpenShiftClient(paths []string, token string) (*OpenShiftClient, error) {
+func NewOpenShiftClient(opt ext.Options, token string) (*OpenShiftClient, error) {
+	log.Debugf("Creating new OpenShift client with: %+v", opt)
 	if token == "" {
 		return nil, fmt.Errorf("Unable to make requests to api server using a blank user token")
 	}
 	//defaults
 	capaths := []string{"/var/run/secrets/kubernetes.io/serviceaccount/ca.crt"}
 	systemRoots := true
-	if len(paths) != 0 {
-		capaths = paths
+	if len(opt.OpenshiftCAs) != 0 {
+		capaths = opt.OpenshiftCAs
 		systemRoots = false
 	}
 	pool, err := util.GetCertPool(capaths, systemRoots)
@@ -92,7 +97,8 @@ func NewOpenShiftClient(paths []string, token string) (*OpenShiftClient, error) 
 			Transport: &http.Transport{
 				Proxy: http.ProxyFromEnvironment,
 				TLSClientConfig: &tls.Config{
-					RootCAs: pool,
+					RootCAs:            pool,
+					InsecureSkipVerify: opt.SSLInsecureSkipVerify,
 				},
 			},
 		},

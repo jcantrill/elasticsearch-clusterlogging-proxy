@@ -76,6 +76,7 @@ func (p *OpenShiftProvider) Bind(flags *flag.FlagSet) {
 // LoadDefaults accepts configuration and loads defaults from the environment, or returns an error.
 // The provider may partially initialize config for subsequent calls.
 func (p *OpenShiftProvider) LoadDefaults(serviceAccount string, reviewJSON, reviewByHostJSON, resources string) (*providers.ProviderData, error) {
+	log.Println("Loading defaults for Openshift Provider")
 	if len(resources) > 0 {
 		paths, err := parseResources(resources)
 		if err != nil {
@@ -101,6 +102,7 @@ func (p *OpenShiftProvider) LoadDefaults(serviceAccount string, reviewJSON, revi
 
 	// all OpenShift service accounts are OAuth clients, use this if we have it
 	if len(serviceAccount) > 0 {
+		log.Printf("Loading defaults for ServiceAccount %s", serviceAccount)
 		if data, err := ioutil.ReadFile("/var/run/secrets/kubernetes.io/serviceaccount/namespace"); err == nil && len(data) > 0 {
 			defaults.ClientID = fmt.Sprintf("system:serviceaccount:%s:%s", strings.TrimSpace(string(data)), serviceAccount)
 			log.Printf("Defaulting client-id to %s", defaults.ClientID)

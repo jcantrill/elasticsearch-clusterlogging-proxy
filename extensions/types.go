@@ -4,6 +4,14 @@ import (
 	"net/http"
 )
 
+type Options struct {
+	OpenshiftCAs          []string
+	TLSCertFile           string
+	TLSKeyFile            string
+	UpstreamURL           string
+	SSLInsecureSkipVerify bool
+}
+
 //FnHandlerRequest is a function that can process a request
 type FnHandlerRequest func(req *http.Request, context interface{}) (*http.Request, error)
 
